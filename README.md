@@ -1,6 +1,4 @@
 # DS4App
-
-# DS4A project
 Cooking Time project DS4A
 built in Streamlit https://docs.streamlit.io/
 
