@@ -1,3 +1,4 @@
+from operator import index
 import streamlit as st
 st.set_page_config(layout="wide")
 header_container = st.container()
@@ -12,26 +13,37 @@ with header_container:
 
 	choose=st.radio("Choose the model",("Descriptive Analysis", "Linear Regression","Random Forest","ARIMA"))
 	st.write("**You have selected:**", choose)
-	#if choose == 'Linear Regression':
+
+	if choose == 'Descriptive Analysis':
+
+		st.map()
+		
+
+
+	elif(choose  =='Linear Regression'):
 		#st.write('You selected Linear Regression.')
-	#elif(choose  =='Random Forest'):
-		#st.write('You selected Random Forest.')
-	#else:
-		#st.write("You selected ARIMA.")
+
+		c1, c2 = st.columns((1,1))		
+
+		brand = c1.selectbox('Select the Brand',('Avocalia', 'Bottaniko', 'Brunch & Munch', 'Burritos & Co', 'Cacerola', 'Cafe Amor Perfect', 'La Cuadra', 'Wok Pok', 'Grab & Drink Tienda', 'Tacos & Co'))
+#c1.text('hola')
+
+		category = c2.selectbox('Select the Category', ('Plato Fuerte', 'Panadería', 'Postres'))
+		st.metric(label="RMSE", value="0.54", delta="5.4")
+#c2.text('hola2')
+
+
+	elif(choose  =='Random Forest'):
+
+		c1, c2 = st.columns((1,1))	
+		c1.map()
+		max_depth = c2.slider('Select the max depth of the model', min_value=10, max_value=100, value=20, step = 10)
+		n_estimators = c2.selectbox('Select numbers of trees', options = [100, 200 ,300], index=0)
+		input_feature = c2.text_input('Select features for the model', 'brand')
+		#c2.subheader('MAE of the model is...')
+		c2.metric(label="MAE (Mean Absolute Error)", value="0.54")
+		c2.metric(label="R (R squared Score)", value="0.75")
+	else:
+		st.write("You selected ARIMA.")
     
 
-c1, c2 = st.columns((1,1))		
-
-c1.option = st.selectbox(
-     'Select the Brand',
-     ('Avocalia', 'Bottaniko', 'Brunch & Munch', 'Burritos & Co', 'Cacerola', 'Cafe Amor Perfect', 'La Cuadra', 'Wok Pok', 'Grab & Drink Tienda', 'Tacos & Co'))
-
-
-c2.option = st.selectbox(
-     'Select the Category',
-     ('Plato Fuerte', 'Panadería', 'Postres'))
-
-st.metric(label="RMSE", value="0.54", delta="5.4")
-
-st.map()
-	 
