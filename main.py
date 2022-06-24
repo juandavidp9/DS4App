@@ -7,6 +7,7 @@ import os
 import psycopg2
 from datetime import datetime, timedelta
 import warnings
+#import statsmodels.api as sm
 #from tqdm import tqdm 
 import matplotlib.pyplot as plt
 from sklearn.datasets import load_boston
@@ -43,7 +44,7 @@ def get_data():
 	df['num_items'] = df['num_items'].astype('float64')
 	df['total'] = df['total'].astype('float64')
 	df['provider_name'] = df['provider_name'].str.upper()
-	df = df.drop(labels=['order_id', 'provider_orderid', 'kitchenid', 'logcreatedat'], axis=1)
+	df = df.drop(labels=['order_id', 'provider_orderid', 'kitchenid'], axis=1)
 	return df
 
 def get_data2():
@@ -55,7 +56,7 @@ def get_data2():
 	df2 = pd.DataFrame(orders_cooking_new)
 	df2.reset_index()
 	df2.columns = ['order_id', 'provider_orderid', 'kitchenid', 'kitchen','type','brand','provider_name', 'logcreatedat','check_orders','minutes', 'num_items', 'total', 'polygon_name', 'polygon_', 'point']
-	df2['polygon'] = df2['polygon_'][0:20].apply(lambda x : wkb.loads(x,hex=True))
+	df2['polygon'] = df2['polygon_'][0:100].apply(lambda x : wkb.loads(x,hex=True))
 	df2 = df2.drop(columns=['provider_orderid','logcreatedat','check_orders', 'kitchen', 'polygon_', 'point'], axis=1)
 	return df2
 
@@ -65,9 +66,9 @@ def descriptive():
 	df = get_data()
 	#st.text(df2.head(10))
 	fig = px.box(df, x="polygon_name", y='minutes')
-	fig2 = px.scatter(df_plots, x='total', y='minutes', trendline="ols").update_traces(marker=dict(color='#2ca02c'))
-	fig4 = px.scatter(df_plots, x='logcreatedat', y="minutes")
-	fig3 = px.scatter(df_plots, x='num_items', y='total').update_traces(marker=dict(color='#17becf'))
+	fig2 = px.scatter(df, x='total', y='minutes').update_traces(marker=dict(color='#2ca02c'))
+	fig4 = px.scatter(df, x='logcreatedat', y="minutes")
+	fig3 = px.scatter(df, x='num_items', y='total').update_traces(marker=dict(color='#17becf'))
 	c1, c2 = st.columns((1,1))
 	c1.plotly_chart(fig, use_container_width=True)
 	c2.plotly_chart(fig2, use_container_width=True)
@@ -83,7 +84,7 @@ def regression():
 
 def randomF():
 	df2 = get_data()
-	df2 = pd.get_dummies(df2, prefix =['kitchen', 'brand', 'provider_name', 'polygon_name'], drop_first=True)
+	df2 = pd.get_dummies(df2, prefix =['kitchen', 'type', 'brand', 'provider_name', 'polygon_name'], drop_first=True)
 	df2 = df2.dropna()
 
 	c1, c2 = st.columns((1,1))	
