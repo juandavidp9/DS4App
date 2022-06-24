@@ -65,8 +65,14 @@ def descriptive():
 	df = get_data()
 	#st.text(df2.head(10))
 	fig = px.box(df, x="polygon_name", y='minutes')
+	fig2 = px.scatter(df_plots, x='total', y='minutes', trendline="ols").update_traces(marker=dict(color='#2ca02c'))
+	fig4 = px.scatter(df_plots, x='logcreatedat', y="minutes")
+	fig3 = px.scatter(df_plots, x='num_items', y='total').update_traces(marker=dict(color='#17becf'))
 	c1, c2 = st.columns((1,1))
 	c1.plotly_chart(fig, use_container_width=True)
+	c2.plotly_chart(fig2, use_container_width=True)
+	c1.plotly_chart(fig3, use_container_width=True)
+	c2.plotly_chart(fig4, use_container_width=True)
 
 def regression():
 	#st.write('You selected Linear Regression.')
