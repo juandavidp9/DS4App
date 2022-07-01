@@ -403,7 +403,7 @@ def regression():
 	elif zone2 == 'Engativá':
 		c2.subheader('The cooking time for Engativá is '+str(Beta_Engativa )+' minutes higher than Andes')
 	else:
-		c2.text('The cooking time for Chapinero is '+str(Beta_Chapinero)+' minutes higher than Andes')
+		c2.subheader('The cooking time for Chapinero is '+str(Beta_Chapinero)+' minutes higher than Andes')
 	
 	#if zone3 == 'Usaquen':
 		#c3.subheader('The cooking time for Usaquen is '+str(Beta_Usaquen)+' minutes lower than Andes')
