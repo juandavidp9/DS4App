@@ -337,7 +337,7 @@ def regression():
 	folium.LayerControl().add_to(mymap)
 	c1, c2, c3, c4 = st.columns((3, 1, 1, 1))	
 	with c1:
-		folium_static(mymap, width = 800) 
+		folium_static(mymap) 
 		
 
 	c2.metric(label="RMSE (Root Mean Squared Error)", value=RMSE)
@@ -548,7 +548,7 @@ def randomF():
 	mymap.keep_in_front(SuburbName)
 	folium.LayerControl().add_to(mymap)
 	with c1:
-		folium_static(mymap, width = 800) 
+		folium_static(mymap) 
 		
 
 	
