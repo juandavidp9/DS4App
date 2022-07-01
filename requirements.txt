@@ -2,8 +2,6 @@ streamlit
 pandas
 plotly
 numpy 
-psycopg2
-tqdm 
 matplotlib
 sklearn
 shapely

@@ -9,7 +9,6 @@ import plotly.io as pio
 import plotly.figure_factory as ff
 import os
 import folium
-import psycopg2
 from datetime import datetime, timedelta
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
@@ -44,13 +43,6 @@ header_container = st.container()
 @st.cache
 
 def get_data():
-	#We create the conecction with the database
-	#conn = psycopg2.connect(host="data-prod.cem7ltlisydy.us-east-1.redshift.amazonaws.com", port = 5439, database="data-prod-co", user="food_user", password="F00do105y2o22")
-	#cur = conn.cursor()
-	#cur.execute("""SELECT * FROM cooking_time.orders_cooking_new""")
-	#orders_cooking_new = cur.fetchall()
-	#we get the dataframe
-	#df = pd.DataFrame(orders_cooking_new)
 	original_url = "https://drive.google.com/file/d/1mK15-Qmk5vYdq91hAuLpdNeLOKfGemdt/view?usp=sharing"
 	file_id = original_url.split('/')[-2]
 	dwn_url='https://drive.google.com/uc?export=download&id=' + file_id
@@ -71,16 +63,6 @@ def get_data():
 	return df.head(10000)
 
 def get_data2():
-	#We create the conecction with the database
-	#conn = psycopg2.connect(host="data-prod.cem7ltlisydy.us-east-1.redshift.amazonaws.com", port = 5439, database="data-prod-co", user="food_user", password="F00do105y2o22")
-	#cur = conn.cursor()
-	#cur.execute("""SELECT * FROM cooking_time.orders_cooking_final""")
-	#orders_cooking_new = cur.fetchall()
-	#df2 = pd.DataFrame(orders_cooking_new)
-	#df2.reset_index()
-	#df2.columns = ['order_id', 'provider_orderid', 'kitchenid', 'kitchen','type','brand','provider_name', 'logcreatedat','check_orders','minutes', 'num_items', 'total', 'polygon_name', 'polygon_', 'point']
-	#df2['polygon'] = df2['polygon_'][0:100].apply(lambda x : wkb.loads(x,hex=True))
-	#df2 = df2.drop(columns=['provider_orderid','logcreatedat','check_orders', 'kitchen', 'polygon_', 'point'], axis=1)
 	original_url = "https://drive.google.com/file/d/1dX3AJxJx2r5oqlRwhv3O6WBnCgYgCv5l/view?usp=sharing"
 	file_id = original_url.split('/')[-2]
 	dwn_url='https://drive.google.com/uc?export=download&id=' + file_id
