@@ -9,3 +9,6 @@ sklearn
 shapely
 statsmodels
 seaborn
+shapely
+folium
+streamlit-folium

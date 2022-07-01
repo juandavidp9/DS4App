@@ -1,4 +1,6 @@
 from operator import index
+import geopandas as gpd
+import shapely.wkt
 import plotly.express as px
 import streamlit as st
 import pandas as pd
@@ -6,6 +8,7 @@ import numpy as np
 import plotly.io as pio
 import plotly.figure_factory as ff
 import os
+import folium
 import psycopg2
 from datetime import datetime, timedelta
 import statsmodels.api as sm
@@ -14,8 +17,9 @@ import statsmodels.stats.api as sms
 from statsmodels.stats.stattools import durbin_watson
 from scipy.stats import chi2_contingency
 import warnings
-#mport seaborn as sns
 #from tqdm import tqdm
+from streamlit_folium import st_folium
+from streamlit_folium import folium_static
 from scipy.stats import shapiro 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -62,6 +66,8 @@ def get_data():
 	df['total'] = df['total'].astype('float64')
 	df['provider_name'] = df['provider_name'].str.upper()
 	df = df.drop(labels=['order_id', 'provider_orderid', 'kitchenid'], axis=1)#.head(10000)
+	df = df[df["minutes"] > 2.0]
+	df.drop(df[df['polygon_name'] == 'Usaquen'].index, inplace = True)
 	return df.head(10000)
 
 def get_data2():
@@ -80,17 +86,19 @@ def get_data2():
 	dwn_url='https://drive.google.com/uc?export=download&id=' + file_id
 	url = requests.get(dwn_url).text
 	path = StringIO(url)
-	df2 = pd.read_csv(path, engine='python')
-	df2.reset_index()
-	df2.columns = ['polygon_name', 'polygon', 'point']
-	return df2
+	map_df  = pd.read_csv(path, header=None)
+	map_df.columns = ['zone', 'polygon', 'polygon2']
+	map_df  = map_df.drop(columns=['polygon2'], axis=1)
+	map_df.drop(map_df[map_df['zone'] == 'Usaquen'].index, inplace = True)
+	return map_df
+
 
 
 
 def descriptive():
 	#pio.templates
 	df = get_data()
-	zone = st.selectbox('Select the Zone',['All zones' , 'Usaquen', 'Suba', 'Salitre', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'])
+	zone = st.selectbox('Select the Zone',['All zones' , 'Suba', 'Salitre', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'])
 			
 	c1, c2 = st.columns((1,1))
 
@@ -170,7 +178,7 @@ def descriptive():
 		c2.plotly_chart(fig5, use_container_width=True)
 		c2.markdown('***Chi Square test (p value of 0.0) suggests that the Brand and Zone have a statistically significant relationship**')
 		c1.markdown("***Considering all zones  the Pearson's correlation between total cost of the order and number of items is weak (r = 0.4)**")
-		c1.markdown("***The Pearson's correlation between total cost of the order and the cooking time in minutes is weak (r = 0.2)**")
+		c1.markdown("***The Pearson's correlation between total cost of the order and the cooking time in minutes is weak (r = 0.3)**")
 
 	if zone != 'All zones' and zone != '':
 
@@ -186,7 +194,7 @@ def descriptive():
 			return {'z': subset.values.tolist(),
 		    'x': subset.columns.tolist(),
             'y': subset.index.tolist()}
-		fig5 = go.Figure(data=go.Heatmap(df_to_plotly(subset)))
+		fig5 = go.Figure(data=go.Heatmap(df_to_plotly(subset), colorscale = 'peach'))
 
 		df5 = filter[['minutes', 'num_items', 'total']]
 		df_corr = df5.corr() 
@@ -255,6 +263,7 @@ def descriptive():
 	#c1.markdown("<h1 style='text-align: center>**p-value of Chi-square test for Brand vs. Kitchen=0.0** </h1>", unsafe_allow_html=True)
 
 def regression():
+	st.write("**Hover over the map to see the predictions by zone!**")	
 	#st.write('You selected Linear Regression.')
 	df2 = get_data()
 	np.random.seed(1337)             
@@ -297,11 +306,58 @@ def regression():
 	Colina = round(test3[test3['polygon_name']=='Colina']['prediccion'].mean(), 2)
 	Engativa = round(test3[test3['polygon_name']=='Engativa']['prediccion'].mean(), 2)
 	Suba = round(test3[test3['polygon_name']=='Suba']['prediccion'].mean(), 2)
-	Usaquen = round(test3[test3['polygon_name']=='Usaquen']['prediccion'].mean(), 2)
+	#Usaquen = round(test3[test3['polygon_name']=='Usaquen']['prediccion'].mean(), 2)
 	Andes = round(test3[test3['polygon_name']=='Andes']['prediccion'].mean(), 2)
 
+	predicciones = [Chapinero, Engativa, Castellana, Colina, Salitre, Suba, Andes]
+
+	df3 = get_data2()
+	df3.insert(loc=2, column='prediction', value=predicciones)
+	geometry = df3["polygon"].map(shapely.wkt.loads)
+	df3 =  df3.drop('polygon', axis=1)
+	gdf = gpd.GeoDataFrame(df3, crs="EPSG:4326", geometry=geometry)
+	mymap = folium.Map(location=[4.624335, -74.063644], zoom_start=11.4, tiles='CartoDB positron') 
+
+	mymap.choropleth(
+ 	geo_data=gdf,
+ 	name='Choropleth',
+ 	data=df3,
+ 	columns=['zone','prediction'],
+ 	key_on="feature.properties.zone",
+ 	fill_color='GnBu',
+ 	hover_name='prediction',
+ 	#threshold_scale=myscale,
+ 	fill_opacity=0.5,
+ 	line_opacity=0.2,
+  	smooth_factor=0)
+
+
+	style_function = lambda x: {'fillColor': '#ffffff', 
+                            'color':'#000000', 
+                            'fillOpacity': 0.1, 
+                            'weight': 0.1}
+	SuburbName = folium.features.GeoJson(
+    gdf,
+    style_function=style_function, 
+    control=False,
+    tooltip=folium.features.GeoJsonTooltip(
+        fields=['zone'
+                ,'prediction'                
+               ],
+        aliases=['Zone'
+                ,'Cooking Time Prediction (in minutes)'
+                ],
+        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;") 
+    )
+	)
+	mymap.add_child(SuburbName)
+	mymap.keep_in_front(SuburbName)
+	folium.LayerControl().add_to(mymap)
 	c1, c2, c3, c4 = st.columns((3, 1, 1, 1))	
-	c1.map()
+	with c1:
+		folium_static(mymap, width = 900) 
+		
+
 	c2.metric(label="RMSE (Root Mean Squared Error)", value=RMSE)
 	c2.write('<style>div.st-bf{flex-direction:column;} div.st-ag{font-weight:bold;padding-left:2px;}</style>', unsafe_allow_html=True)
 	asumptions = c2.radio("Check the asumptions of the model*",("No", "Yes"))#, horizontal=False)
@@ -318,22 +374,23 @@ def regression():
 	
 		
 	#c1, c2 = st.columns((1, 1))
-	zone2 = c2.selectbox('Select the Zone 1',('Suba', 'Usaquen', 'Salitre', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'))
-	zone3 = c3.selectbox('Select the Zone 2',('Usaquen', 'Suba', 'Salitre', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'))
-	zone4 = c4.selectbox('Select the Zone 3',('Salitre', 'Usaquen', 'Suba', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'))
+	zone2 = c2.selectbox('Select the Zone 1',('Suba', 'Salitre', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'))
+	zone3 = c3.selectbox('Select the Zone 2',('Salitre', 'Suba', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'))
+	zone4 = c4.selectbox('Select the Zone 3',('Andes', 'Suba', 'Salitre', 'Castellana', 'Colina', 'Engativá', 'Chapinero'))
 
-	Beta_Usaquen = abs(round(model2.params['polygon_name[T.Usaquen]'],2))
+	#Beta_Usaquen = abs(round(model2.params['polygon_name[T.Usaquen]'],2))
 	Beta_Salitre = abs(round(model2.params['polygon_name[T.Salitre]'],2))
 	Beta_Castellana = round(model2.params['polygon_name[T.Castellana]'],2)
 	Beta_Chapinero = round(model2.params['polygon_name[T.Chapinero]'],2)
 	Beta_Colina = abs(round(model2.params['polygon_name[T.Colina]'], 2))
 	Beta_Engativa = round(model2.params['polygon_name[T.Engativa]'],2)
 	Beta_Suba = round(model2.params['polygon_name[T.Suba]'],2)
+	
 		
 	#c2.text(model2.summary())	
-	if zone2 == 'Usaquen':
-		c2.subheader('The cooking time for Usaquen is '+str(Beta_Usaquen)+' minutes lower than Andes')
-	elif zone2 == 'Suba':
+	#if zone2 == 'Usaquen':
+		#c2.subheader('The cooking time for Usaquen is '+str(Beta_Usaquen)+' minutes lower than Andes')
+	if zone2 == 'Suba':
 		c2.subheader('The cooking time for Suba is '+str(Beta_Suba)+' minutes higher than Andes')
 	elif zone2 == 'Salitre':
 		c2.subheader('The cooking time for Salitre is '+str(Beta_Salitre)+' minutes lower than Andes')
@@ -348,9 +405,9 @@ def regression():
 	else:
 		c2.text('The cooking time for Chapinero is '+str(Beta_Chapinero)+' minutes higher than Andes')
 	
-	if zone3 == 'Usaquen':
-		c3.subheader('The cooking time for Usaquen is '+str(Beta_Usaquen)+' minutes lower than Andes')
-	elif zone3 == 'Suba':
+	#if zone3 == 'Usaquen':
+		#c3.subheader('The cooking time for Usaquen is '+str(Beta_Usaquen)+' minutes lower than Andes')
+	if zone3 == 'Suba':
 		c3.subheader('The cooking time for Suba is '+str(Beta_Suba)+' minutes higher than Andes')
 	elif zone3 == 'Salitre':
 		c3.subheader('The cooking time for Salitre is '+str(Beta_Salitre)+' minutes lower than Andes')
@@ -365,9 +422,9 @@ def regression():
 	else:
 		c3.subheader('The cooking time for Chapinero is '+str(Beta_Chapinero)+' minutes higher than Andes')
 
-	if zone4 == 'Usaquen':
-		c4.subheader('The cooking time for Usaquen is '+str(Beta_Usaquen)+' minutes lower than Andes')
-	elif zone4 == 'Suba':
+	#if zone4 == 'Usaquen':
+		#c4.subheader('The cooking time for Usaquen is '+str(Beta_Usaquen)+' minutes lower than Andes')
+	if zone4 == 'Suba':
 		c4.subheader('The cooking time for Suba is '+str(Beta_Suba)+' minutes higher than Andes')
 	elif zone4 == 'Salitre':
 		c4.subheader('The cooking time for Salitre is '+str(Beta_Salitre)+' minutes lower than Andes')
@@ -414,12 +471,13 @@ def regression():
 	
 
 def randomF():
+	st.write("**Hover over the map to see the predictions by zone!**")	
 	df2 = get_data()
 	df2 = pd.get_dummies(df2, prefix =['kitchen', 'type', 'brand', 'provider_name', 'polygon_name'])
 	df2 = df2.dropna()
 
 	c1, c2 = st.columns((1,1))	
-	c1.map()
+	
 	max_depth2 = c2.slider('Select the max depth of the model', min_value=10, max_value=50, value=20, step = 10)
 	n_estimators2 = c2.selectbox('Select numbers of trees', options = [10, 20 ,30, 40], index=0)
 	#input_feature = c2.text_input('Select features for the model', 'brand')
@@ -455,19 +513,63 @@ def randomF():
 	c2.metric(label="R2 (R squared Score)", value=r2)
 	c2.metric(label="MAE (Mean Absolute Error)", value=mae)
 
-	Salitre = X_test[X_test['polygon_name_Salitre']==1]['prediccion'].mean()
-	Castellana = X_test[X_test['polygon_name_Castellana']==1]['prediccion'].mean()
-	Chapinero = X_test[X_test['polygon_name_Chapinero']==1]['prediccion'].mean()
-	Colina = X_test[X_test['polygon_name_Colina']==1]['prediccion'].mean()
-	Engativa = X_test[X_test['polygon_name_Engativa']==1]['prediccion'].mean()
-	Suba = X_test[X_test['polygon_name_Suba']==1]['prediccion'].mean()
-	Usaquen = X_test[X_test['polygon_name_Usaquen']==1]['prediccion'].mean()
-	Andes = X_test[X_test['polygon_name_Andes']==1]['prediccion'].mean()
-	predicciones = [Chapinero, Castellana, Colina, Salitre, Suba, Andes, Usaquen]
+	Salitre = round(X_test[X_test['polygon_name_Salitre']==1]['prediccion'].mean(), 2)
+	Castellana = round(X_test[X_test['polygon_name_Castellana']==1]['prediccion'].mean(), 2)
+	Chapinero = round(X_test[X_test['polygon_name_Chapinero']==1]['prediccion'].mean(), 2)
+	Colina = round(X_test[X_test['polygon_name_Colina']==1]['prediccion'].mean(), 2)
+	Engativa =round( X_test[X_test['polygon_name_Engativa']==1]['prediccion'].mean(), 2)
+	Suba = round(X_test[X_test['polygon_name_Suba']==1]['prediccion'].mean(), 2)
+	#Usaquen = round(X_test[X_test['polygon_name_Usaquen']==1]['prediccion'].mean(), 2)
+	Andes = round(X_test[X_test['polygon_name_Andes']==1]['prediccion'].mean(), 2)
+	predicciones = [Chapinero, Engativa, Castellana, Colina, Salitre, Suba, Andes]
 
 	df3 = get_data2()
-	df3.insert(loc=3, column='prediction', value=predicciones)
+	df3.insert(loc=2, column='prediction', value=predicciones)
+	geometry = df3["polygon"].map(shapely.wkt.loads)
+	df3 =  df3.drop('polygon', axis=1)
+	gdf = gpd.GeoDataFrame(df3, crs="EPSG:4326", geometry=geometry)
+	mymap = folium.Map(location=[4.624335, -74.063644], zoom_start=11.4, tiles='CartoDB positron') 
 
+	mymap.choropleth(
+ 	geo_data=gdf,
+ 	name='Choropleth',
+ 	data=df3,
+ 	columns=['zone','prediction'],
+ 	key_on="feature.properties.zone",
+ 	fill_color='GnBu',
+ 	hover_name='prediction',
+ 	#threshold_scale=myscale,
+ 	fill_opacity=0.5,
+ 	line_opacity=0.2,
+  	smooth_factor=0)
+
+
+	style_function = lambda x: {'fillColor': '#ffffff', 
+                            'color':'#000000', 
+                            'fillOpacity': 0.1, 
+                            'weight': 0.1}
+	SuburbName = folium.features.GeoJson(
+    gdf,
+    style_function=style_function, 
+    control=False,
+    tooltip=folium.features.GeoJsonTooltip(
+        fields=['zone'
+                ,'prediction'                
+               ],
+        aliases=['Zone'
+                ,'Cooking Time Prediction (in minutes)'
+                ],
+        style=("background-color: white; color: #333333; font-family: arial; font-size: 12px; padding: 10px;") 
+    )
+	)
+	mymap.add_child(SuburbName)
+	mymap.keep_in_front(SuburbName)
+	folium.LayerControl().add_to(mymap)
+	with c1:
+		folium_static(mymap, width = 900) 
+		
+
+	
 
 	
 
@@ -478,8 +580,28 @@ with header_container:
 		#time.sleep(0.1)
 		#my_bar.progress(percent_complete + 1)
 
+	hide_streamlit_style = """
+            <style>
+			.css-1y0tads {padding-top: 0rem;}
+			#MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+			footer {	
+			visibility: hidden;
+			}
+
+			footer:after {
+			content:'Made by juandp9'; 
+			visibility: visible;
+			display: block;
+			position: relative;
+			#background-color: red;
+			padding: 5 px;
+			top: 2 px;}
+			</style>
+			"""
+	st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 	st.markdown("<h1 style='text-align: center; color: #1434A4;'>Cooking Time App </h1>", unsafe_allow_html=True)
-	st.markdown("<h5 style='text-align: center; color: #2F2E2D;'>Get to know the average cooking time of orders and kitchens!</h5>", unsafe_allow_html=True)	
+	st.markdown("<h5 style='text-align: center; color: #2F2E2D;'>Get to know the average cooking time of orders in zones of Bogotá!</h5>", unsafe_allow_html=True)	
 
 	st.write('<style>div.row-widget.stRadio > div{flex-direction:row;justify-content: center;} </style>', unsafe_allow_html=True)
 	st.write('<style>div.st-bf{flex-direction:column;} div.st-ag{font-weight:bold;padding-left:2px;}</style>', unsafe_allow_html=True)
@@ -487,6 +609,7 @@ with header_container:
 
 	choose=st.radio("Choose the model",("Descriptive Analysis", "Linear Regression","Random Forest"))
 	st.write("**You have selected:**", choose)
+	
 
 	if choose == 'Descriptive Analysis':
 		descriptive()
@@ -496,6 +619,7 @@ with header_container:
 		
 	else:
 		randomF()
+		
 
 
 
