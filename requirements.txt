@@ -10,3 +10,4 @@ seaborn
 shapely
 folium
 streamlit-folium
+geopandas
