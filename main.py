@@ -80,7 +80,7 @@ def get_data2():
 def descriptive():
 	#pio.templates
 	df = get_data()
-	zone = st.selectbox('Select the Zone',['All zones' , 'Suba', 'Salitre', 'Andes', 'Castellana', 'Colina', 'Engativá', 'Chapinero'])
+	zone = st.selectbox('Select the Zone',['All zones' , 'Suba', 'Salitre', 'Andes', 'Castellana', 'Colina', 'Engativa', 'Chapinero'])
 			
 	c1, c2 = st.columns((1,1))
 
