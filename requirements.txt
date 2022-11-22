@@ -4,6 +4,7 @@ plotly
 numpy 
 matplotlib
 sklearn
+scikit-learn
 shapely
 statsmodels
 seaborn
