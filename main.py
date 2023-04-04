@@ -473,7 +473,7 @@ def randomF():
                                     )
 	model = RandomForestRegressor(
             n_estimators = n_estimators2,
-            criterion    = 'mse',
+            criterion    = 'squared_error',
             max_depth    = max_depth2,
             max_features = 'auto',
             oob_score    = False,
