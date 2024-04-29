@@ -512,7 +512,7 @@ def randomF():
 	gdf = gpd.GeoDataFrame(df3, crs="EPSG:4326", geometry=geometry)
 	mymap = folium.Map(location=[4.624335, -74.063644], zoom_start=11.4, tiles='CartoDB positron') 
 
-	mymap.Choropleth(
+	folium.Choropleth(
  	geo_data=gdf,
  	name='Choropleth',
  	data=df3,
@@ -523,7 +523,7 @@ def randomF():
  	#threshold_scale=myscale,
  	fill_opacity=0.5,
  	line_opacity=0.2,
-  	smooth_factor=0)
+  	smooth_factor=0).add_to(mymap)
 
 
 	style_function = lambda x: {'fillColor': '#ffffff', 
