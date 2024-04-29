@@ -475,7 +475,7 @@ def randomF():
             n_estimators = n_estimators2,
             criterion    = 'squared_error',
             max_depth    = max_depth2,
-            max_features = 'auto',
+            max_features = 30,
             oob_score    = False,
             n_jobs       = -1,
             random_state = 123
