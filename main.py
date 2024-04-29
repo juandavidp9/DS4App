@@ -76,7 +76,6 @@ def get_data2():
 
 
 
-
 def descriptive():
 	#pio.templates
 	df = get_data()
