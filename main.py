@@ -300,7 +300,7 @@ def regression():
 
 	mymap = folium.Map(location=[4.624335, -74.063644], zoom_start=11.4, tiles='CartoDB positron') 
 
-	folium.choropleth(
+	folium.Choropleth(
  	geo_data=gdf,
  	name='Choropleth',
  	data=df3,
