@@ -40,7 +40,7 @@ st.set_page_config(layout="wide")
 header_container = st.container()
 
 
-@st.cache
+@st.cache_data
 
 def get_data():
 	original_url = "https://drive.google.com/file/d/1mK15-Qmk5vYdq91hAuLpdNeLOKfGemdt/view?usp=sharing"
