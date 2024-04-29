@@ -512,7 +512,7 @@ def randomF():
 	gdf = gpd.GeoDataFrame(df3, crs="EPSG:4326", geometry=geometry)
 	mymap = folium.Map(location=[4.624335, -74.063644], zoom_start=11.4, tiles='CartoDB positron') 
 
-	mymap.choropleth(
+	mymap.Choropleth(
  	geo_data=gdf,
  	name='Choropleth',
  	data=df3,
