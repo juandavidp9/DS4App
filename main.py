@@ -297,9 +297,10 @@ def regression():
 	geometry = df3["polygon"].map(shapely.wkt.loads)
 	df3 =  df3.drop('polygon', axis=1)
 	gdf = gpd.GeoDataFrame(df3, crs="EPSG:4326", geometry=geometry)
+
 	mymap = folium.Map(location=[4.624335, -74.063644], zoom_start=11.4, tiles='CartoDB positron') 
 
-	mymap.choropleth(
+	folium.choropleth(
  	geo_data=gdf,
  	name='Choropleth',
  	data=df3,
@@ -310,7 +311,7 @@ def regression():
  	#threshold_scale=myscale,
  	fill_opacity=0.5,
  	line_opacity=0.2,
-  	smooth_factor=0)
+  	smooth_factor=0).add_to(mymap)
 
 
 	style_function = lambda x: {'fillColor': '#ffffff', 
